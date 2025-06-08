@@ -1,0 +1,110 @@
+package com.uogames.file.storage.service
+
+import com.uogames.file.storage.db.Database
+import com.uogames.file.storage.model.AccessType
+import com.uogames.file.storage.model.FileInfoDTO
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insertAndGetId
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
+import java.io.File
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+import kotlin.uuid.toJavaUuid
+import kotlin.uuid.toKotlinUuid
+
+@OptIn(ExperimentalUuidApi::class)
+class FileService(
+    private val folder: String,
+) {
+
+    private val catalog = Database.FileCatalog
+
+    suspend fun save(
+        byteArray: ByteArray,
+        accessType: AccessType,
+    ): String {
+        println("TAG ${byteArray.size}")
+        val filename = transaction {
+            catalog.insertAndGetId {
+                it[catalog.size] = byteArray.size
+                it[catalog.accessType] = accessType
+            }.value.toKotlinUuid().toHexString()
+        }
+
+        val wFolder = File(folder).apply { mkdirs() }
+        File(wFolder, filename).writeBytes(byteArray)
+
+        return filename
+
+    }
+
+    suspend fun exists(filename: String): Boolean = File(folder, filename).exists()
+
+    suspend fun getFile(filename: String): File? {
+        val id = Uuid.parseHex(filename).toJavaUuid()
+        val file = File(folder, filename)
+        if (!file.exists()) return null
+        transaction {
+            catalog.selectAll()
+                .where { catalog.id eq id }
+                .limit(1)
+                .first()
+
+            catalog.update(
+                where = { catalog.id eq id }
+            ) {
+                it[lastRequest] = System.currentTimeMillis()
+            }
+        }
+        return file
+    }
+
+    suspend fun delete(filename: String) {
+        val id = Uuid.parseHex(filename).toJavaUuid()
+        val file = File(folder, filename)
+        file.delete()
+        transaction {
+            catalog.deleteWhere { catalog.id eq id }
+        }
+    }
+
+    suspend fun fileInfo(filename: String): FileInfoDTO? {
+        val id = Uuid.parseHex(filename).toJavaUuid()
+        val exists = File(folder, filename).exists()
+        return transaction {
+            catalog.selectAll()
+                .where { catalog.id eq id }
+                .limit(1)
+                .firstOrNull()
+                ?.let {
+                    FileInfoDTO(
+                        fileName = filename,
+                        size = it[catalog.size],
+                        createdAd = it[catalog.createdAt],
+                        lastRequest = it[catalog.lastRequest],
+                        accessType = it[catalog.accessType],
+                        exists = exists
+                    )
+                }
+        }
+    }
+
+    suspend fun findOlderThen(time: Long): List<String> = transaction {
+        catalog.selectAll()
+            .where { catalog.lastRequest less time }
+            .map { it[catalog.id].value.toKotlinUuid().toHexString() }
+    }
+
+    suspend fun resetLastRequest(ids: List<String>)  = transaction{
+        val uuidIDS = ids.map { Uuid.parseHex(it).toJavaUuid() }
+        catalog.update(
+            where = { catalog.id inList  uuidIDS },
+            body = { it[catalog.lastRequest] = System.currentTimeMillis() }
+        )
+    }
+
+
+}
