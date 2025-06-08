@@ -39,11 +39,9 @@ fun Route.files(
         post("/file/upload") {
             val filenameList = ArrayList<String>()
             call.receiveMultipart(fileSizeLimit).forEachPart { part ->
-                println("PART $part")
                 when (part) {
                     is PartData.FileItem -> {
                         val fileBytes = part.provider().toByteArray()
-                        println(fileBytes.size)
                         val filename = filesService.save(fileBytes, AccessType.PUBLIC)
                         filenameList.add(filename)
                     }

@@ -63,6 +63,7 @@ fun Application.module() {
         println("${LocalDateTime.now()}: Request ${call.request.httpMethod} ${call.request.uri} was running $processingTime mc")
     }
 
+
     Database.init(storageFolder)
     val fileService = FileService(storageFolder)
     val ktorClient = KtorClient(existsRequest,clientToken)

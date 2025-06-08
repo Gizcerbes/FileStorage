@@ -3,12 +3,12 @@ package com.uogames.file.storage.service
 import com.uogames.file.storage.db.Database
 import com.uogames.file.storage.model.AccessType
 import com.uogames.file.storage.model.FileInfoDTO
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insertAndGetId
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.insertAndGetId
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
 import java.io.File
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -26,7 +26,6 @@ class FileService(
         byteArray: ByteArray,
         accessType: AccessType,
     ): String {
-        println("TAG ${byteArray.size}")
         val filename = transaction {
             catalog.insertAndGetId {
                 it[catalog.size] = byteArray.size

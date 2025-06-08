@@ -1,11 +1,9 @@
 package com.uogames.file.storage.util
 
 import com.uogames.file.storage.util.UuidExt.randomV7
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.IdTable
-import org.jetbrains.exposed.dao.id.UUIDTable
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.statements.UpdateBuilder
+import org.jetbrains.exposed.v1.core.*
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import java.util.*
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -14,21 +12,21 @@ import kotlin.uuid.toJavaUuid
 object DatabaseEXT {
 
 
-    fun <T : Table> T.upsert(
-        where: SqlExpressionBuilder.() -> Op<Boolean>,
-        data: T.(UpdateBuilder<Number>) -> Unit,
-    ) {
-        val exp = columns.first().count()
-        val result = select(columns.first().count())
-            .where(where)
-            .firstOrNull()
-            ?.get(exp) ?: 0L
-        if (result == 0L) {
-            insert(data)
-        } else {
-            update(where, null, data)
-        }
-    }
+//    fun <T : Table> T.upsert(
+//        where: SqlExpressionBuilder.() -> Op<Boolean>,
+//        data: T.(UpdateBuilder<Number>) -> Unit,
+//    ) {
+//        val exp = columns.first().count()
+//        val result = select(columns.first().count())
+//            .where(where)
+//            .firstOrNull()
+//            ?.get(exp) ?: 0L
+//        if (result == 0L) {
+//            insert(data, null)
+//        } else {
+//            update(where, null, data)
+//        }
+//    }
 
 
     @OptIn(ExperimentalUuidApi::class)

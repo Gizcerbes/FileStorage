@@ -2,17 +2,17 @@ package com.uogames.file.storage.db
 
 import com.uogames.file.storage.model.AccessType
 import com.uogames.file.storage.util.DatabaseEXT
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.io.File
 
 object Database {
 
 
-    fun init(dbFolder: String): org.jetbrains.exposed.sql.Database {
+    fun init(dbFolder: String): org.jetbrains.exposed.v1.jdbc.Database {
         File(dbFolder).mkdirs()
 
-        val db = org.jetbrains.exposed.sql.Database.connect("jdbc:sqlite:$dbFolder/data.db")
+        val db = org.jetbrains.exposed.v1.jdbc.Database.connect("jdbc:sqlite:$dbFolder/data.db")
 
         transaction {
             SchemaUtils.create(FileCatalog)
