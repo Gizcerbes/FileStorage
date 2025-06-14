@@ -20,12 +20,12 @@ object Database {
         return db
     }
 
-
     object FileCatalog : DatabaseEXT.UuidV7Table() {
         val size = integer("size")
         val createdAt = long("created_at").clientDefault { System.currentTimeMillis() }
         val lastRequest = long("last_request").clientDefault { System.currentTimeMillis() }
         val accessType = enumerationByName<AccessType>("access_type", 10)
+        val contentType = text("content_type")
     }
 
 

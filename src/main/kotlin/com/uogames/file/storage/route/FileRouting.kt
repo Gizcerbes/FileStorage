@@ -23,8 +23,16 @@ fun Route.files(
     get("/file/{file_name}") {
         val filename = call.receiveUuidOrError("file_name") { return@get }
         val file = requireNotNull(filesService.getFile(filename.toHexString())) { return@get }
-        call.respondFile(file) {
+        val fileInfo = requireNotNull(filesService.fileInfo(filename.toHexString())) { return@get }
 
+        call.respondBytes(file.readBytes(), ContentType.parse(fileInfo.contentType)) {
+            this.caching = CachingOptions(
+                CacheControl.MaxAge(
+                    maxAgeSeconds = Int.MAX_VALUE,
+                    mustRevalidate = false,
+                    visibility = CacheControl.Visibility.Public
+                )
+            )
         }
     }
 
@@ -41,8 +49,10 @@ fun Route.files(
             call.receiveMultipart(fileSizeLimit).forEachPart { part ->
                 when (part) {
                     is PartData.FileItem -> {
+                        val contentType = part.contentType ?: ContentType.Any
                         val fileBytes = part.provider().toByteArray()
-                        val filename = filesService.save(fileBytes, AccessType.PUBLIC)
+                        val filename =
+                            filesService.save(fileBytes, AccessType.PUBLIC, contentType = contentType.toString())
                         filenameList.add(filename)
                     }
 

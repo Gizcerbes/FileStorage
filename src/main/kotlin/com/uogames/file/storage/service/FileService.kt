@@ -25,11 +25,13 @@ class FileService(
     suspend fun save(
         byteArray: ByteArray,
         accessType: AccessType,
+        contentType: String
     ): String {
         val filename = transaction {
             catalog.insertAndGetId {
                 it[catalog.size] = byteArray.size
                 it[catalog.accessType] = accessType
+                it[catalog.contentType] = contentType
             }.value.toKotlinUuid().toHexString()
         }
 
@@ -85,7 +87,8 @@ class FileService(
                         createdAd = it[catalog.createdAt],
                         lastRequest = it[catalog.lastRequest],
                         accessType = it[catalog.accessType],
-                        exists = exists
+                        exists = exists,
+                        contentType = it[catalog.contentType]
                     )
                 }
         }
