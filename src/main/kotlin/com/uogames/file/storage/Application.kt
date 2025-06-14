@@ -67,7 +67,7 @@ fun Application.module() {
     Database.init(storageFolder)
     val fileService = FileService(storageFolder)
     val ktorClient = KtorClient(existsRequest,clientToken)
-    val cleanUpService = CleanUpService(fileService,ktorClient, repeatTime, oldMils)
+    CleanUpService(fileService,ktorClient, repeatTime, oldMils)
 
     routing {
         files(fileService, fileSizeLimit)

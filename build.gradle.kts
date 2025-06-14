@@ -38,3 +38,13 @@ tasks.test {
 kotlin {
     jvmToolchain(17)
 }
+
+application {
+    mainClass.set("com.uogames.file.starage.MainKt")
+}
+
+ktor {
+    fatJar {
+        archiveFileName.set("fat.jar")
+    }
+}

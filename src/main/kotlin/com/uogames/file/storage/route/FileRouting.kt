@@ -36,7 +36,7 @@ fun Route.files(
         }
     }
 
-    get("/info/{file_name}") {
+    get("/file/info/{file_name}") {
         val filename = call.receiveUuidOrError("file_name") { return@get }
         val data = requireNotNull(filesService.fileInfo(filename.toHexString())) { return@get }
         call.respond(data)
@@ -63,7 +63,9 @@ fun Route.files(
             call.respond(FileDataDTO(nameList = filenameList))
         }
 
-
+        get("/storage/info") {
+            call.respond(filesService.storageState())
+        }
 
         delete("/file/{file_name}") {
             val filename = call.receiveUuidOrError("file_name") { return@delete }

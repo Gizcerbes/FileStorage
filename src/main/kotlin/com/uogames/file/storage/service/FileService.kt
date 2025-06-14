@@ -4,11 +4,9 @@ import com.uogames.file.storage.db.Database
 import com.uogames.file.storage.model.AccessType
 import com.uogames.file.storage.model.FileInfoDTO
 import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.v1.jdbc.deleteWhere
-import org.jetbrains.exposed.v1.jdbc.insertAndGetId
-import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.core.sum
+import org.jetbrains.exposed.v1.jdbc.*
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import org.jetbrains.exposed.v1.jdbc.update
 import java.io.File
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -105,6 +103,18 @@ class FileService(
         catalog.update(
             where = { catalog.id inList  uuidIDS },
             body = { it[catalog.lastRequest] = System.currentTimeMillis() }
+        )
+    }
+
+    suspend fun storageState(): Map<String, Long>{
+        val folder = File(folder)
+        val onControl = transaction {
+            catalog.select(catalog.size.sum()).firstOrNull()?.get(catalog.size.sum()) ?: 0
+        }
+        return mapOf(
+            "total_space" to folder.totalSpace,
+            "free" to folder.freeSpace,
+            "on_control" to onControl.toLong()
         )
     }
 
