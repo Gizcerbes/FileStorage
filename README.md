@@ -7,7 +7,7 @@
 #### `file_size_limit` - Maximum file size
 
 #### `client_token` - Bearer Authorization of the carrier for requests to the main server, for the request it is necessary to save files
-#### `exists_request` - Request with a question about storing a file to the main server. If the file is needed, then return status 200
+#### `exists_request` - POST Request with a question about storing a file to the main server. If the file is needed, then return status 200
 #### `repeat_time` - How often to ask
 #### `old_mils` - Ask about files older than. If the server returns 200, the date is reset, if 404, it is deleted.
 
