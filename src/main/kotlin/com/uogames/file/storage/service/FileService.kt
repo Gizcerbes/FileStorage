@@ -72,13 +72,12 @@ class FileService(
         )
     }
 
-    suspend fun delete(filename: String) {
+    suspend fun delete(filename: String): Boolean {
         val id = Uuid.parseHex(filename).toJavaUuid()
         val file = File(folder, filename)
-        file.delete()
-        transaction {
-            catalog.deleteWhere { catalog.id eq id }
-        }
+        val result = file.delete()
+        transaction { catalog.deleteWhere { catalog.id eq id } }
+        return result
     }
 
     suspend fun fileInfo(filename: String): FileInfoDTO? {

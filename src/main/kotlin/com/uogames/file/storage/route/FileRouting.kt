@@ -80,8 +80,9 @@ fun Route.files(
 
         delete("/file/{file_name}") {
             val filename = call.receiveUuidOrError("file_name") { return@delete }
-            filesService.delete(filename.toHexString())
-            call.respond(HttpStatusCode.OK)
+            val result = filesService.delete(filename.toHexString())
+            if (result) call.respond(HttpStatusCode.OK)
+            else call.respond(HttpStatusCode.NotFound)
         }
     }
 
