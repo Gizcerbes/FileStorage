@@ -32,3 +32,46 @@ ktor {
 
 }
 ```
+## Requests
+
+### With authorization
+
+#### `POST http://domain/file/upload` - Multipart form data with files. Returns 
+
+```
+{
+    "name_list": [
+        "019770bb36727378a1e1c3b0baec12a1"
+    ]
+}
+```
+
+#### `GET http://domain/storage/info` - Returns 
+
+```
+{
+    "total_space": 160023179264,
+    "free": 49233371136,
+    "on_control": 36528331
+}
+```
+
+####  `DELETE http://domain/file/{file_name}` -  Returns status code 200 if success, 404 if not found
+
+### Without authorization
+
+#### `GET http://domain/file/{file_name}` - Returns the file
+
+#### `GET http://domain//file/info/{file_name}` - Returns the file info
+
+```
+{
+    "file_name": "019770b96ede7a26a06abe9a13b10fc0",
+    "size": 161190,
+    "created_at": 1749942890207,
+    "last_request": 1749973577947,
+    "exists": true,
+    "content_type": "image/jpeg",
+    "requests": 63
+}
+```
