@@ -12,5 +12,6 @@ data class FileInfoDTO(
     @SerialName("last_request") val lastRequest: Long = 0,
     @SerialName("access_type") val accessType: AccessType = AccessType.PUBLIC,
     @SerialName("exists") val exists: Boolean = false,
-    @SerialName("content_type") val contentType: String = ContentType.Any.toString()
+    @SerialName("content_type") val contentType: String = ContentType.Any.toString(),
+    @SerialName("requests") val requests: Long = 0
 )

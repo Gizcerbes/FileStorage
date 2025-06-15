@@ -23,7 +23,7 @@ class FileService(
     suspend fun save(
         byteArray: ByteArray,
         accessType: AccessType,
-        contentType: String
+        contentType: String,
     ): String {
         val filename = transaction {
             catalog.insertAndGetId {
@@ -42,12 +42,12 @@ class FileService(
 
     suspend fun exists(filename: String): Boolean = File(folder, filename).exists()
 
-    suspend fun getFile(filename: String): File? {
+    suspend fun getFile(filename: String): Pair<File, FileInfoDTO>? {
         val id = Uuid.parseHex(filename).toJavaUuid()
         val file = File(folder, filename)
         if (!file.exists()) return null
-        transaction {
-            catalog.selectAll()
+        val data = transaction {
+            val data = catalog.selectAll()
                 .where { catalog.id eq id }
                 .limit(1)
                 .first()
@@ -56,9 +56,20 @@ class FileService(
                 where = { catalog.id eq id }
             ) {
                 it[lastRequest] = System.currentTimeMillis()
+                it[requests] = data[requests] + 1
             }
+            data
         }
-        return file
+        return file to FileInfoDTO(
+            fileName = filename,
+            size = data[catalog.size],
+            createdAd = data[catalog.createdAt],
+            lastRequest = System.currentTimeMillis(),
+            accessType = data[catalog.accessType],
+            exists = true,
+            contentType = data[catalog.contentType],
+            requests = data[catalog.requests] + 1
+        )
     }
 
     suspend fun delete(filename: String) {
@@ -86,7 +97,8 @@ class FileService(
                         lastRequest = it[catalog.lastRequest],
                         accessType = it[catalog.accessType],
                         exists = exists,
-                        contentType = it[catalog.contentType]
+                        contentType = it[catalog.contentType],
+                        requests = it[catalog.requests]
                     )
                 }
         }
@@ -98,15 +110,15 @@ class FileService(
             .map { it[catalog.id].value.toKotlinUuid().toHexString() }
     }
 
-    suspend fun resetLastRequest(ids: List<String>)  = transaction{
+    suspend fun resetLastRequest(ids: List<String>) = transaction {
         val uuidIDS = ids.map { Uuid.parseHex(it).toJavaUuid() }
         catalog.update(
-            where = { catalog.id inList  uuidIDS },
+            where = { catalog.id inList uuidIDS },
             body = { it[catalog.lastRequest] = System.currentTimeMillis() }
         )
     }
 
-    suspend fun storageState(): Map<String, Long>{
+    suspend fun storageState(): Map<String, Long> {
         val folder = File(folder)
         val onControl = transaction {
             catalog.select(catalog.size.sum()).firstOrNull()?.get(catalog.size.sum()) ?: 0

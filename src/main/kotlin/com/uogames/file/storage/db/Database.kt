@@ -26,6 +26,7 @@ object Database {
         val lastRequest = long("last_request").clientDefault { System.currentTimeMillis() }
         val accessType = enumerationByName<AccessType>("access_type", 10)
         val contentType = text("content_type")
+        val requests = long("requests").default(0)
     }
 
 

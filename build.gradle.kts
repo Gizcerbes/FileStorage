@@ -40,7 +40,7 @@ kotlin {
 }
 
 application {
-    mainClass.set("com.uogames.file.starage.MainKt")
+    mainClass.set("com.uogames.file.storage.ApplicationKt")
 }
 
 ktor {

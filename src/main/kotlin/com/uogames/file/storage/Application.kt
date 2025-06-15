@@ -6,15 +6,12 @@ import com.uogames.file.storage.route.files
 import com.uogames.file.storage.service.CleanUpService
 import com.uogames.file.storage.service.FileService
 import com.uogames.file.storage.util.JsonExt
-import io.ktor.http.*
-import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.plugins.cachingheaders.*
 import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.request.httpMethod
-import io.ktor.server.request.uri
+import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import java.time.LocalDateTime
 import kotlin.system.measureTimeMillis
@@ -40,14 +37,7 @@ fun Application.module() {
         .toLong()
 
     install(ContentNegotiation) { json(json = JsonExt.json) }
-    install(CachingHeaders){
-        options { _, outgoingContent ->
-            when(outgoingContent.contentType?.withoutParameters()){
-                ContentType.Application.OctetStream -> CachingOptions(CacheControl.MaxAge(maxAgeSeconds = Int.MAX_VALUE))
-                else -> null
-            }
-        }
-    }
+    install(CachingHeaders)
 
     install(Authentication) {
         bearer("api-key") {

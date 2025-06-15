@@ -10,6 +10,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.util.date.*
 import io.ktor.utils.io.*
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -22,17 +23,27 @@ fun Route.files(
 
     get("/file/{file_name}") {
         val filename = call.receiveUuidOrError("file_name") { return@get }
-        val file = requireNotNull(filesService.getFile(filename.toHexString())) { return@get }
-        val fileInfo = requireNotNull(filesService.fileInfo(filename.toHexString())) { return@get }
 
-        call.respondBytes(file.readBytes(), ContentType.parse(fileInfo.contentType)) {
-            this.caching = CachingOptions(
-                CacheControl.MaxAge(
-                    maxAgeSeconds = Int.MAX_VALUE,
-                    mustRevalidate = false,
-                    visibility = CacheControl.Visibility.Public
+        val file = requireNotNull(filesService.getFile(filename.toHexString())) { return@get }
+
+        call.response.header(HttpHeaders.LastModified, GMTDate(file.second.createdAd).toHttpDate())
+        call.response.header(HttpHeaders.ETag, file.second.fileName)
+
+        val isNoneMatch = call.request.header(HttpHeaders.IfNoneMatch) == filename.toHexString()
+        val isModifiedSince = call.request.header(HttpHeaders.IfModifiedSince) == GMTDate(file.second.createdAd).toHttpDate()
+
+        if (isNoneMatch || isModifiedSince) {
+            return@get call.respond(HttpStatusCode.NotModified)
+        } else {
+            call.respondBytes(file.first.readBytes(), ContentType.parse(file.second.contentType)) {
+                this.caching = CachingOptions(
+                    CacheControl.MaxAge(
+                        maxAgeSeconds = Int.MAX_VALUE,
+                        mustRevalidate = false,
+                        visibility = CacheControl.Visibility.Public
+                    )
                 )
-            )
+            }
         }
     }
 
