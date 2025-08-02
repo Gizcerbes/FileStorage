@@ -1,6 +1,7 @@
 package com.uogames.file.storage
 
 import com.uogames.file.storage.client.KtorClient
+import com.uogames.file.storage.config.PostgresConfig
 import com.uogames.file.storage.db.Database
 import com.uogames.file.storage.route.files
 import com.uogames.file.storage.service.CleanUpService
@@ -19,7 +20,9 @@ import kotlin.system.measureTimeMillis
 fun main(args: Array<String>): Unit = io.ktor.server.cio.EngineMain.main(args)
 
 
-fun Application.module() {
+suspend fun Application.module() {
+
+    val postgresConfig = PostgresConfig.build(this)
 
     val adminToken = environment.config.property("ktor.admin_token").getString()
     val storageFolder = environment.config.property("ktor.storage_folder").getString()
@@ -36,6 +39,8 @@ fun Application.module() {
         .replace("_", "")
         .toLong()
 
+    Database.initPostgres(postgresConfig)
+
     install(ContentNegotiation) { json(json = JsonExt.json) }
     install(CachingHeaders)
 
@@ -50,11 +55,11 @@ fun Application.module() {
 
     intercept(ApplicationCallPipeline.Monitoring) {
         val processingTime = measureTimeMillis { proceed() }
-        println("${LocalDateTime.now()}: Request ${call.request.httpMethod} ${call.request.uri} was running $processingTime mc")
+        println("${LocalDateTime.now()}:Request ${call.request.httpMethod} ${call.request.uri} was running $processingTime mc")
     }
 
 
-    Database.init(storageFolder)
+//    Database.init(storageFolder)
     val fileService = FileService(storageFolder)
     val ktorClient = KtorClient(existsRequest,clientToken)
     CleanUpService(fileService,ktorClient, repeatTime, oldMils)

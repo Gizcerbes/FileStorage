@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm") version "2.1.20"
     kotlin("plugin.serialization") version "2.1.20"
-    id("io.ktor.plugin") version "3.1.3"
+    id("io.ktor.plugin") version "3.2.1"
 }
 
 group = "com.example"
@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    val ktorVersion = "3.1.3"
+    val ktorVersion = "3.2.1"
     implementation("io.ktor:ktor-server-cio:$ktorVersion")
     implementation("io.ktor:ktor-server-auth:$ktorVersion")
     implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
@@ -23,13 +23,19 @@ dependencies {
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
     implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
 
-    val exposedVersion = "1.0.0-beta-2"
+    val exposedVersion = "1.0.0-beta-4"
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
-    implementation("org.xerial:sqlite-jdbc:3.49.1.0")
+    implementation("org.jetbrains.exposed:exposed-r2dbc:$exposedVersion")
+
+    implementation("org.postgresql:postgresql:42.7.3")
+    implementation("org.postgresql:r2dbc-postgresql:1.0.7.RELEASE")
+//    implementation("org.xerial:sqlite-jdbc:3.49.1.0")
 
 //    implementation("ch.qos.logback:logback-classic:1.5.18")
+
+
 }
 
 tasks.test {

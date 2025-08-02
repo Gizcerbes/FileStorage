@@ -3,10 +3,17 @@ package com.uogames.file.storage.service
 import com.uogames.file.storage.db.Database
 import com.uogames.file.storage.model.AccessType
 import com.uogames.file.storage.model.FileInfoDTO
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.v1.core.sum
-import org.jetbrains.exposed.v1.jdbc.*
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.r2dbc.*
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransactionAsync
 import java.io.File
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -20,12 +27,13 @@ class FileService(
 
     private val catalog = Database.FileCatalog
 
+
     suspend fun save(
         byteArray: ByteArray,
         accessType: AccessType,
         contentType: String,
     ): String {
-        val filename = transaction {
+        val filename = suspendTransaction {
             catalog.insertAndGetId {
                 it[catalog.size] = byteArray.size
                 it[catalog.accessType] = accessType
@@ -46,18 +54,11 @@ class FileService(
         val id = Uuid.parseHex(filename).toJavaUuid()
         val file = File(folder, filename)
         if (!file.exists()) return null
-        val data = transaction {
+        val data = suspendTransaction {
             val data = catalog.selectAll()
                 .where { catalog.id eq id }
                 .limit(1)
                 .first()
-
-            catalog.update(
-                where = { catalog.id eq id }
-            ) {
-                it[lastRequest] = System.currentTimeMillis()
-                it[requests] = data[requests] + 1
-            }
             data
         }
         return file to FileInfoDTO(
@@ -72,18 +73,28 @@ class FileService(
         )
     }
 
+    suspend fun addRead(filename: String) = suspendTransactionAsync {
+        val id = Uuid.parseHex(filename).toJavaUuid()
+        catalog.update(
+            where = { catalog.id eq id }
+        ) {
+            it[lastRequest] = System.currentTimeMillis()
+            it[requests] = catalog.requests.plus(1)
+        }
+    }
+
     suspend fun delete(filename: String): Boolean {
         val id = Uuid.parseHex(filename).toJavaUuid()
         val file = File(folder, filename)
         val result = file.delete()
-        transaction { catalog.deleteWhere { catalog.id eq id } }
+        suspendTransaction { catalog.deleteWhere { catalog.id eq id } }
         return result
     }
 
     suspend fun fileInfo(filename: String): FileInfoDTO? {
         val id = Uuid.parseHex(filename).toJavaUuid()
         val exists = File(folder, filename).exists()
-        return transaction {
+        return suspendTransaction {
             catalog.selectAll()
                 .where { catalog.id eq id }
                 .limit(1)
@@ -103,13 +114,14 @@ class FileService(
         }
     }
 
-    suspend fun findOlderThen(time: Long): List<String> = transaction {
+    suspend fun findOlderThen(time: Long): List<String> = suspendTransaction {
         catalog.selectAll()
             .where { catalog.lastRequest less time }
             .map { it[catalog.id].value.toKotlinUuid().toHexString() }
+            .toList()
     }
 
-    suspend fun resetLastRequest(ids: List<String>) = transaction {
+    suspend fun resetLastRequest(ids: List<String>) = suspendTransaction {
         val uuidIDS = ids.map { Uuid.parseHex(it).toJavaUuid() }
         catalog.update(
             where = { catalog.id inList uuidIDS },
@@ -119,7 +131,7 @@ class FileService(
 
     suspend fun storageState(): Map<String, Long> {
         val folder = File(folder)
-        val onControl = transaction {
+        val onControl = suspendTransaction {
             catalog.select(catalog.size.sum()).firstOrNull()?.get(catalog.size.sum()) ?: 0
         }
         return mapOf(

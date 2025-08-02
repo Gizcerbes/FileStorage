@@ -20,7 +20,7 @@ class KtorClient(
     private val client = HttpClient(CIO) {
         install(ContentNegotiation) { json(json = JsonExt.json) }
         defaultRequest {
-            header("Authorization", "Bearer $clientToken")
+            header(HttpHeaders.Authorization, "Bearer $clientToken")
         }
     }
 

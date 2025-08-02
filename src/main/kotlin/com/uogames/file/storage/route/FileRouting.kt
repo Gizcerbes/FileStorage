@@ -4,6 +4,7 @@ import com.uogames.file.storage.model.AccessType
 import com.uogames.file.storage.model.FileDataDTO
 import com.uogames.file.storage.service.FileService
 import com.uogames.file.storage.util.CoreExt.receiveUuidOrError
+import io.ktor.client.content.*
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.auth.*
@@ -12,6 +13,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.date.*
 import io.ktor.utils.io.*
+import kotlinx.coroutines.launch
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
@@ -29,22 +31,16 @@ fun Route.files(
         call.response.header(HttpHeaders.LastModified, GMTDate(file.second.createdAd).toHttpDate())
         call.response.header(HttpHeaders.ETag, file.second.fileName)
 
-        val isNoneMatch = call.request.header(HttpHeaders.IfNoneMatch) == filename.toHexString()
-        val isModifiedSince = call.request.header(HttpHeaders.IfModifiedSince) == GMTDate(file.second.createdAd).toHttpDate()
-
-        if (isNoneMatch || isModifiedSince) {
-            return@get call.respond(HttpStatusCode.NotModified)
-        } else {
-            call.respondBytes(file.first.readBytes(), ContentType.parse(file.second.contentType)) {
-                this.caching = CachingOptions(
-                    CacheControl.MaxAge(
-                        maxAgeSeconds = Int.MAX_VALUE,
-                        mustRevalidate = false,
-                        visibility = CacheControl.Visibility.Public
-                    )
+        call.respond(LocalFileContent(file.first, contentType = ContentType.parse(file.second.contentType)).apply {
+            this.caching = CachingOptions(
+                CacheControl.MaxAge(
+                    maxAgeSeconds = Int.MAX_VALUE,
+                    mustRevalidate = false,
+                    visibility = CacheControl.Visibility.Public
                 )
-            }
-        }
+            )
+        })
+        filesService.addRead(file.first.name)
     }
 
     get("/file/info/{file_name}") {
@@ -62,8 +58,7 @@ fun Route.files(
                     is PartData.FileItem -> {
                         val contentType = part.contentType ?: ContentType.Any
                         val fileBytes = part.provider().toByteArray()
-                        val filename =
-                            filesService.save(fileBytes, AccessType.PUBLIC, contentType = contentType.toString())
+                        val filename = filesService.save(fileBytes, AccessType.PUBLIC, contentType = contentType.toString())
                         filenameList.add(filename)
                     }
 
