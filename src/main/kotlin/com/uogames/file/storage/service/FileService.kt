@@ -3,17 +3,13 @@ package com.uogames.file.storage.service
 import com.uogames.file.storage.db.Database
 import com.uogames.file.storage.model.AccessType
 import com.uogames.file.storage.model.FileInfoDTO
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.plus
-import org.jetbrains.exposed.v1.core.sum
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
+import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.r2dbc.*
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
-import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransactionAsync
 import java.io.File
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -22,7 +18,7 @@ import kotlin.uuid.toKotlinUuid
 
 @OptIn(ExperimentalUuidApi::class)
 class FileService(
-    private val folder: String,
+    private val folder: String
 ) {
 
     private val catalog = Database.FileCatalog
@@ -73,7 +69,7 @@ class FileService(
         )
     }
 
-    suspend fun addRead(filename: String) = suspendTransactionAsync {
+    suspend fun addRead(filename: String) = suspendTransaction {
         val id = Uuid.parseHex(filename).toJavaUuid()
         catalog.update(
             where = { catalog.id eq id }

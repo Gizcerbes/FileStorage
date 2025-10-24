@@ -7,6 +7,8 @@ import com.uogames.file.storage.route.files
 import com.uogames.file.storage.service.CleanUpService
 import com.uogames.file.storage.service.FileService
 import com.uogames.file.storage.util.JsonExt
+import io.ktor.http.*
+import io.ktor.http.auth.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -32,9 +34,11 @@ suspend fun Application.module() {
 
     val clientToken = environment.config.property("ktor.clean_up.client_token").getString()
     val existsRequest = environment.config.property("ktor.clean_up.exists_request").getString()
+    val allowRequest = environment.config.property("ktor.clean_up.allow_request").getString()
     val repeatTime = environment.config.property("ktor.clean_up.repeat_time").getString()
         .replace("_", "")
         .toLong()
+
     val oldMils = environment.config.property("ktor.clean_up.old_mils").getString()
         .replace("_", "")
         .toLong()
@@ -44,10 +48,22 @@ suspend fun Application.module() {
     install(ContentNegotiation) { json(json = JsonExt.json) }
     install(CachingHeaders)
 
+    val ktorClient = KtorClient(existsRequest, allowRequest, clientToken)
+    val fileService = FileService(storageFolder)
+    CleanUpService(fileService, ktorClient, repeatTime, oldMils)
+
     install(Authentication) {
         bearer("api-key") {
             authenticate {
                 if (it.token == adminToken) Unit
+                else null
+            }
+        }
+        bearer("allow"){
+            authenticate {
+                println(it.token)
+                val isAllow = runCatching { ktorClient.allowRequest("${AuthScheme.Bearer} ${it.token}") }.getOrNull()
+                if (isAllow == HttpStatusCode.OK) Unit
                 else null
             }
         }
@@ -60,9 +76,8 @@ suspend fun Application.module() {
 
 
 //    Database.init(storageFolder)
-    val fileService = FileService(storageFolder)
-    val ktorClient = KtorClient(existsRequest,clientToken)
-    CleanUpService(fileService,ktorClient, repeatTime, oldMils)
+
+
 
     routing {
         files(fileService, fileSizeLimit)

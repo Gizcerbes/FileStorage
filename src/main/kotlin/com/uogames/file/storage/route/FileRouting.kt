@@ -13,7 +13,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.date.*
 import io.ktor.utils.io.*
-import kotlinx.coroutines.launch
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
@@ -50,7 +49,7 @@ fun Route.files(
     }
 
 
-    authenticate("api-key") {
+    authenticate("api-key", "allow") {
         post("/file/upload") {
             val filenameList = ArrayList<String>()
             call.receiveMultipart(fileSizeLimit).forEachPart { part ->
@@ -68,6 +67,10 @@ fun Route.files(
             }
             call.respond(FileDataDTO(nameList = filenameList))
         }
+
+    }
+
+    authenticate("api-key") {
 
         get("/storage/info") {
             call.respond(filesService.storageState())
