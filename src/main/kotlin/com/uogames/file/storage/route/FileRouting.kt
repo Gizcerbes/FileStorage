@@ -5,7 +5,6 @@ import com.uogames.file.storage.model.FileDataDTO
 import com.uogames.file.storage.service.FileService
 import com.uogames.file.storage.util.CoreExt.receiveUuidOrError
 import io.ktor.client.content.*
-import io.ktor.client.statement.HttpResponse
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.auth.*
@@ -60,9 +59,8 @@ fun Route.files(
             call.receiveMultipart(fileSizeLimit).forEachPart { part ->
                 when (part) {
                     is PartData.FileItem -> {
-                        val contentType = part.contentType ?: ContentType.Any
                         val fileBytes = part.provider().toByteArray()
-                        val filename = filesService.save(fileBytes, AccessType.PUBLIC, contentType = contentType.toString())
+                        val filename = filesService.save(fileBytes, AccessType.PUBLIC)
                         filenameList.add(filename)
                     }
 

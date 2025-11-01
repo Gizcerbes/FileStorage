@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
+import org.apache.tika.Tika
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.r2dbc.*
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
@@ -18,7 +19,7 @@ import kotlin.uuid.toKotlinUuid
 
 @OptIn(ExperimentalUuidApi::class)
 class FileService(
-    private val folder: String
+    private val folder: String,
 ) {
 
     private val catalog = Database.FileCatalog
@@ -26,19 +27,22 @@ class FileService(
 
     suspend fun save(
         byteArray: ByteArray,
-        accessType: AccessType,
-        contentType: String,
+        accessType: AccessType
     ): String {
+        val tika = Tika()
+        val type = tika.detect(byteArray)
         val filename = suspendTransaction {
             catalog.insertAndGetId {
                 it[catalog.size] = byteArray.size
                 it[catalog.accessType] = accessType
-                it[catalog.contentType] = contentType
+                it[catalog.contentType] = type
             }.value.toKotlinUuid().toHexString()
         }
 
         val wFolder = File(folder).apply { mkdirs() }
-        File(wFolder, filename).writeBytes(byteArray)
+        File(wFolder, filename).apply { writeBytes(byteArray) }
+
+
 
         return filename
 

@@ -31,7 +31,8 @@ dependencies {
 
     implementation("org.postgresql:r2dbc-postgresql:1.1.1.RELEASE")
 
-
+    implementation("org.apache.tika:tika-core:3.2.3")
+    implementation("org.apache.tika:tika-parsers-standard-package:3.2.3")
 }
 
 tasks.test {
