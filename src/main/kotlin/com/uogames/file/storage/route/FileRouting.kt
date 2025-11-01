@@ -5,6 +5,7 @@ import com.uogames.file.storage.model.FileDataDTO
 import com.uogames.file.storage.service.FileService
 import com.uogames.file.storage.util.CoreExt.receiveUuidOrError
 import io.ktor.client.content.*
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.auth.*
@@ -23,9 +24,13 @@ fun Route.files(
 
 
     get("/file/{file_name}") {
-        val filename = call.receiveUuidOrError("file_name") { return@get }
+        val filename = call.receiveUuidOrError("file_name") { return@get call.respond(HttpStatusCode.NotFound) }
 
-        val file = requireNotNull(filesService.getFile(filename.toHexString())) { return@get }
+        val file = requireNotNull(filesService.getFile(filename.toHexString())) { return@get call.respond(HttpStatusCode.NotFound) }
+
+        if(call.request.header(HttpHeaders.ETag) == file.first.name){
+            return@get call.respond(HttpStatusCode.NotModified)
+        }
 
         call.response.header(HttpHeaders.LastModified, GMTDate(file.second.createdAd).toHttpDate())
         call.response.header(HttpHeaders.ETag, file.second.fileName)

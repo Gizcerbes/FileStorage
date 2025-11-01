@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm") version "2.2.20"
     kotlin("plugin.serialization") version "2.2.20"
-    id("io.ktor.plugin") version "3.2.3"
+    id("io.ktor.plugin") version "3.3.1"
 }
 
 group = "com.example"
@@ -29,7 +29,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-r2dbc:$exposedVersion")
 
-    implementation("org.postgresql:r2dbc-postgresql:1.1.0.RELEASE")
+    implementation("org.postgresql:r2dbc-postgresql:1.1.1.RELEASE")
 
 
 }
