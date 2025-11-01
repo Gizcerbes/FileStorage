@@ -3,6 +3,7 @@ package com.uogames.file.storage
 import com.uogames.file.storage.client.KtorClient
 import com.uogames.file.storage.config.PostgresConfig
 import com.uogames.file.storage.db.Database
+import com.uogames.file.storage.model.Errors
 import com.uogames.file.storage.route.files
 import com.uogames.file.storage.service.CleanUpService
 import com.uogames.file.storage.service.FileService
@@ -14,6 +15,7 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.plugins.cachingheaders.*
 import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import java.time.LocalDateTime
@@ -67,6 +69,10 @@ suspend fun Application.module() {
                 else null
             }
         }
+    }
+
+    install(StatusPages) {
+        exception<Throwable> { call, cause -> Errors.handle(call, cause) }
     }
 
     intercept(ApplicationCallPipeline.Monitoring) {

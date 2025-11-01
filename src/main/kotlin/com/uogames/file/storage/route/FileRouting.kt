@@ -1,6 +1,7 @@
 package com.uogames.file.storage.route
 
 import com.uogames.file.storage.model.AccessType
+import com.uogames.file.storage.model.BaseModel
 import com.uogames.file.storage.model.FileDataDTO
 import com.uogames.file.storage.service.FileService
 import com.uogames.file.storage.util.CoreExt.receiveUuidOrError
@@ -49,7 +50,7 @@ fun Route.files(
     get("/file/info/{file_name}") {
         val filename = call.receiveUuidOrError("file_name") { return@get }
         val data = requireNotNull(filesService.fileInfo(filename.toHexString())) { return@get }
-        call.respond(data)
+        call.respond(BaseModel(data = data))
     }
 
 
@@ -68,7 +69,7 @@ fun Route.files(
                 }
                 part.dispose()
             }
-            call.respond(FileDataDTO(nameList = filenameList))
+            call.respond(BaseModel(data = FileDataDTO(nameList = filenameList)))
         }
 
     }

@@ -14,4 +14,4 @@ data class FileInfoDTO(
     @SerialName("exists") val exists: Boolean = false,
     @SerialName("content_type") val contentType: String = ContentType.Any.toString(),
     @SerialName("requests") val requests: Long = 0
-)
+): DataResponse()

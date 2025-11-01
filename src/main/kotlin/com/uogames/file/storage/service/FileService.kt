@@ -41,9 +41,6 @@ class FileService(
 
         val wFolder = File(folder).apply { mkdirs() }
         File(wFolder, filename).apply { writeBytes(byteArray) }
-
-
-
         return filename
 
     }
